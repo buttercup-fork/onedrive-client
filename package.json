@@ -1,0 +1,53 @@
+{
+  "name": "@buttercup/onedrive-client",
+  "version": "0.1.0",
+  "description": "Basic client and OAuth2 helper for Microsoft OneDrive (Microsoft Graph)",
+  "exports": "./dist/index.js",
+  "react-native": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "type": "module",
+  "scripts": {
+    "build": "npm run clean && tsc",
+    "clean": "rimraf dist",
+    "format": "prettier --write '{source,test}/**/*.{js,ts}'",
+    "prepare": "npm run build",
+    "test": "npm run test:unit && npm run test:format",
+    "test:format": "prettier --check '{source,test}/**/*.{js,ts}'",
+    "test:unit": "npm run build && mocha 'test/unit/**/*.spec.js'"
+  },
+  "files": [
+    "dist/**/*"
+  ],
+  "engines": {
+    "node": ">=16"
+  },
+  "lint-staged": {
+    "{source,test}/**/*.{js,ts}": [
+      "prettier --write"
+    ]
+  },
+  "keywords": [
+    "onedrive",
+    "microsoft",
+    "graph",
+    "oauth2",
+    "client"
+  ],
+  "author": "Codekunde",
+  "license": "MIT",
+  "dependencies": {
+    "@buttercup/fetch": "^0.2.1",
+    "eventemitter3": "^5.0.1",
+    "hot-patcher": "^2.0.1",
+    "layerr": "^2.0.1"
+  },
+  "devDependencies": {
+    "@types/node": "^20.9.0",
+    "chai": "^4.3.10",
+    "mocha": "^10.2.0",
+    "prettier": "^3.0.3",
+    "rimraf": "^5.0.5",
+    "sinon": "^17.0.1",
+    "typescript": "^5.2.2"
+  }
+}

@@ -1,0 +1,7 @@
+*.log
+.history
+node_modules
+test.js
+.nyc_output
+/dist
+/coverage
