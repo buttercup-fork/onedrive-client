@@ -1,4 +1,4 @@
-import EventEmitter from "eventemitter3";
+import { EventEmitter } from "eventemitter3";
 import { Layerr } from "layerr";
 import { fetch } from "@buttercup/fetch";
 import { encodeForm, handleBadResponse } from "./request.js";
