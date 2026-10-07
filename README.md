@@ -75,3 +75,15 @@ All client requests go through a [hot-patcher](https://github.com/perry-mitchell
 ```typescript
 client.patcher.patch("request", (config) => myFetch(config.url, config));
 ```
+
+## Testing sign-in against Microsoft
+
+`npm test` uses fakes. `scripts/signin-test.mjs` is a manual check against the real service: it signs in with PKCE through a loopback redirect, writes, reads, lists and deletes one file, then refreshes the token. It needs an Entra app registration (public client, redirect `http://localhost`, delegated `Files.ReadWrite` and `offline_access`) and an account with OneDrive; a work account without a OneDrive licence fails with `403 notAllowed`.
+
+```
+npm run build
+$env:ONEDRIVE_CLIENT_ID = "<application (client) ID>"
+node scripts/signin-test.mjs
+```
+
+Optional: `ONEDRIVE_TENANT` (`common`, `consumers` or `organizations`) and `ONEDRIVE_INPRIVATE=1` to open a private Edge window. Tokens are never printed.
