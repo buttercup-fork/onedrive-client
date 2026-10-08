@@ -14,10 +14,10 @@ Only text files are supported for reading and writing.
 This fork's packages aren't published to npm. Install from git:
 
 ```shell
-npm install git+http://192.168.168.6:3050/buttercup.codekunde/onedrive-client.git
+npm install github:buttercup-fork/onedrive-client --save
 ```
 
-The package builds itself on install (`prepare`). It requires an [ESM](https://nodejs.org/api/esm.html) environment and NodeJS 16 or newer.
+The package builds itself on install (`prepare`). It requires an [ESM](https://nodejs.org/api/esm.html) environment and NodeJS 22 or newer.
 
 ## Usage
 
