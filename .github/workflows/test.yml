@@ -1,17 +1,21 @@
 name: Tests
 
-on: push
+# Branches only: pushing a tag shouldn't start a run of its own
+on:
+  push:
+    branches: ["**"]
+  workflow_dispatch:
 
 jobs:
   specs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        node-version: [16.x, 18.x, 20.x]
+        node-version: [22.x, 24.x]
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v5
       - name: Node.js specs ${{ matrix.node-version }}
-        uses: actions/setup-node@v1
+        uses: actions/setup-node@v5
         with:
           node-version: ${{ matrix.node-version }}
       - run: npm ci

@@ -6,6 +6,10 @@
   "react-native": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "type": "module",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/buttercup-fork/onedrive-client.git"
+  },
   "scripts": {
     "build": "npm run clean && tsc",
     "clean": "rimraf dist",
@@ -19,7 +23,7 @@
     "dist/**/*"
   ],
   "engines": {
-    "node": ">=16"
+    "node": ">=22"
   },
   "lint-staged": {
     "{source,test}/**/*.{js,ts}": [
