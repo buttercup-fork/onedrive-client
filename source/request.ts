@@ -23,7 +23,9 @@ export function handleBadResponse(response: Response): void {
                     authFailure: response.status === 401,
                     status: response.status,
                     statusText: response.statusText,
-                    url: response.url
+                    // The final URL after redirects can be a pre-authenticated
+                    // download link: keep the origin and path, drop the query
+                    url: stripQuery(response.url)
                 }
             },
             `Request failed: ${response.status} ${response.statusText}`
@@ -44,6 +46,13 @@ export async function request(config: RequestConfig): Promise<Response> {
     } finally {
         clear();
     }
+}
+
+/**
+ * Remove the query string and fragment from a URL
+ */
+export function stripQuery(url: string | undefined): string | undefined {
+    return typeof url === "string" ? url.split(/[?#]/)[0] : url;
 }
 
 /**

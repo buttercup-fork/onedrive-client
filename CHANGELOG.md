@@ -15,3 +15,4 @@ _Unreleased_
    * `generateAuthUrl` requires `state`, and a PKCE challenge unless the client has a secret; only `S256` (B-645)
    * The authorisation code is no longer decoded a second time (B-646)
    * A token response without an access token throws `ERR_BAD_TOKEN_RESPONSE` and is not emitted (B-647)
+   * The error info `url` has no query string or fragment (B-648)

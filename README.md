@@ -68,7 +68,7 @@ const items = await client.getDirectoryContents({ path: "/Vaults" }); // root if
 // [{ id, name, path, size, type: "file" | "directory", mtime }]
 ```
 
-Failed requests throw a `Layerr` error whose info includes `status` and `authFailure` (`true` for a 401, meaning the access token needs refreshing).
+Failed requests throw a `Layerr` error whose info includes `status`, `authFailure` (`true` for a 401, meaning the access token needs refreshing) and `url` (origin and path of the final response URL, without the query string).
 
 Paths may not contain `.` or `..` segments. Requests give up after 60 seconds (`timeout` option in milliseconds, `0` for no limit; it covers the wait for the response, not the body). A directory listing follows at most 1000 pages and only links that stay on the endpoint.
 

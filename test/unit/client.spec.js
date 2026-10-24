@@ -330,6 +330,26 @@ describe("OneDriveClient", function () {
         });
     });
 
+    describe("failed requests", function () {
+        it("keeps the query string of the final URL out of the error info", async function () {
+            this.requestStub.returns(
+                Promise.resolve({
+                    ok: false,
+                    status: 403,
+                    statusText: "Forbidden",
+                    url: "https://x.sharepoint.com/dl/file?tempauth=SECRET#frag"
+                })
+            );
+            let error = null;
+            try {
+                await this.client.getFileContents({ fileID: "x" });
+            } catch (err) {
+                error = err;
+            }
+            expect(Layerr.info(error).url).to.equal("https://x.sharepoint.com/dl/file");
+        });
+    });
+
     describe("timeout", function () {
         it("aborts the default request when the response takes too long", async function () {
             // A real server that never answers
