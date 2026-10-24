@@ -1,7 +1,7 @@
 import { EventEmitter } from "eventemitter3";
 import { Layerr } from "layerr";
 import { fetch } from "@buttercup/fetch";
-import { encodeForm, handleBadResponse } from "./request.js";
+import { encodeForm, handleBadResponse, timeoutSignal } from "./request.js";
 import {
     ERR_REFRESH_FAILED,
     MICROSOFT_OAUTH2_BASE_URL,
@@ -30,10 +30,12 @@ export class OAuth2Client extends EventEmitter {
     protected _refreshToken: string = null;
     protected _refreshTokenPromises: Map<string, Promise<MicrosoftTokenResponse>>;
     protected _tenant: string;
+    protected _timeout: number | undefined;
 
     constructor(clientID: string, redirectURL: string, options: OneDriveOAuth2ClientOptions = {}) {
         super();
-        const { clientSecret, tenant = MICROSOFT_OAUTH2_DEFAULT_TENANT } = options;
+        const { clientSecret, tenant = MICROSOFT_OAUTH2_DEFAULT_TENANT, timeout } = options;
+        this._timeout = timeout;
         this._clientID = clientID;
         this._clientSecret = clientSecret;
         this._redirectURL = redirectURL;
@@ -146,18 +148,24 @@ export class OAuth2Client extends EventEmitter {
         return this._receiveTokens(res, refreshToken);
     }
 
-    protected _requestToken(data: Record<string, string | undefined>) {
-        return this._fetch(this.tokenURL, {
-            method: "POST",
-            body: encodeForm({
-                client_id: this._clientID,
-                client_secret: this._clientSecret,
-                ...data
-            }),
-            headers: {
-                "Content-Type": "application/x-www-form-urlencoded"
-            }
-        });
+    protected async _requestToken(data: Record<string, string | undefined>) {
+        const { signal, clear } = timeoutSignal(this._timeout);
+        try {
+            return await this._fetch(this.tokenURL, {
+                method: "POST",
+                body: encodeForm({
+                    client_id: this._clientID,
+                    client_secret: this._clientSecret,
+                    ...data
+                }),
+                headers: {
+                    "Content-Type": "application/x-www-form-urlencoded"
+                },
+                signal
+            });
+        } finally {
+            clear();
+        }
     }
 
     protected async _receiveTokens(

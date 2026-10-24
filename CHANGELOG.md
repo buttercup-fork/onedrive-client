@@ -11,3 +11,4 @@ _Unreleased_
    * Paths with `.` or `..` segments are refused (B-641)
    * The endpoint must be https on a known Graph host unless `allowCustomEndpoint` is set (B-642)
    * Directory listings refuse page links outside the endpoint and stop after 1000 pages (B-643)
+   * Requests and token requests time out after 60 seconds, `timeout` option (B-644)

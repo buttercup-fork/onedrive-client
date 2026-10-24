@@ -19,6 +19,11 @@ export const GRAPH_HOSTS = [
  */
 export const MAX_DIRECTORY_PAGES = 1000;
 
+/**
+ * Milliseconds to wait for a response before aborting a request
+ */
+export const REQUEST_TIMEOUT = 60000;
+
 export const MICROSOFT_OAUTH2_BASE_URL = "https://login.microsoftonline.com";
 export const MICROSOFT_OAUTH2_DEFAULT_TENANT = "common";
 

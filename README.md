@@ -47,6 +47,8 @@ const { tokens: fresh } = await oauth.refreshAccessToken(tokens.refresh_token);
 
 A refresh that fails with a 4xx response (revoked or expired refresh token) throws an error with `code: ERR_REFRESH_FAILED` in its [Layerr](https://github.com/perry-mitchell/layerr) info. The user needs to sign in again.
 
+Token requests give up after 60 seconds (`timeout` option in milliseconds, `0` for no limit). The timeout covers the wait for the response, not the reading of its body.
+
 ### Files
 
 ```typescript
@@ -66,7 +68,7 @@ const items = await client.getDirectoryContents({ path: "/Vaults" }); // root if
 
 Failed requests throw a `Layerr` error whose info includes `status` and `authFailure` (`true` for a 401, meaning the access token needs refreshing).
 
-Paths may not contain `.` or `..` segments. A directory listing follows at most 1000 pages and only links that stay on the endpoint.
+Paths may not contain `.` or `..` segments. Requests give up after 60 seconds (`timeout` option in milliseconds, `0` for no limit; it covers the wait for the response, not the body). A directory listing follows at most 1000 pages and only links that stay on the endpoint.
 
 For national clouds, pass the Graph endpoint: `new OneDriveClient(token, { endpoint: "https://microsoftgraph.chinacloudapi.cn/v1.0" })`. The access token is sent to the endpoint, so it must be `https` on a known Graph host (`graph.microsoft.com`, `graph.microsoft.us`, `dod-graph.microsoft.us`, `microsoftgraph.chinacloudapi.cn`); anything else (a local test server) needs `allowCustomEndpoint: true`.
 

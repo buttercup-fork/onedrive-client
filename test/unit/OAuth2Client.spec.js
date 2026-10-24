@@ -89,6 +89,28 @@ describe("OAuth2Client", function () {
             });
         });
 
+        it("passes an abort signal for the timeout", async function () {
+            await this.client.exchangeAuthCodeForToken("code", "verifier");
+            expect(this.fetchStub.firstCall.args[1].signal).to.be.instanceOf(AbortSignal);
+        });
+
+        it("aborts when the token request takes too long", async function () {
+            const client = new OAuth2Client("id", "http://x", { timeout: 20 });
+            sinon.stub(client, "_fetch").callsFake(
+                (url, { signal }) =>
+                    new Promise((resolve, reject) => {
+                        signal.addEventListener("abort", () => reject(new Error("aborted")));
+                    })
+            );
+            let error = null;
+            try {
+                await client.exchangeAuthCodeForToken("code", "verifier");
+            } catch (err) {
+                error = err;
+            }
+            expect(error).to.have.property("message", "aborted");
+        });
+
         it("includes the client secret for confidential clients", async function () {
             const client = new OAuth2Client("id", "http://x", { clientSecret: "shh" });
             const stub = sinon.stub(client, "_fetch").returns(tokenResponse({ access_token: "a" }));

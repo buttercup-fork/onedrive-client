@@ -21,6 +21,11 @@ export interface OneDriveClientOptions {
      * Defaults to "https://graph.microsoft.com/v1.0".
      */
     endpoint?: string;
+    /**
+     * Milliseconds to wait for a response before aborting (default 60000,
+     * 0 for no limit)
+     */
+    timeout?: number;
 }
 
 export interface OneDriveItem {
@@ -71,6 +76,11 @@ export interface OneDriveOAuth2ClientOptions {
      * use PKCE instead
      */
     clientSecret?: string;
+    /**
+     * Milliseconds to wait for a token response before aborting (default
+     * 60000, 0 for no limit)
+     */
+    timeout?: number;
     /**
      * Tenant: "common" (default - personal and work/school accounts),
      * "consumers", "organizations" or a tenant ID

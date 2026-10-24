@@ -1,3 +1,4 @@
+import { createServer } from "node:http";
 import sinon from "sinon";
 import { expect } from "chai";
 import { Layerr } from "layerr";
@@ -326,6 +327,30 @@ describe("OneDriveClient", function () {
             expect(error).to.be.an("error");
             expect(error.message).to.contain("Too many directory pages");
             expect(this.requestStub.callCount).to.equal(1000);
+        });
+    });
+
+    describe("timeout", function () {
+        it("aborts the default request when the response takes too long", async function () {
+            // A real server that never answers
+            const server = createServer(() => {});
+            await new Promise(resolve => server.listen(0, "127.0.0.1", resolve));
+            const client = new OneDriveClient(FAKE_TOKEN, {
+                allowCustomEndpoint: true,
+                endpoint: `http://127.0.0.1:${server.address().port}/v1.0`,
+                timeout: 50
+            });
+            let error = null;
+            const started = Date.now();
+            try {
+                await client.getFileContents({ fileID: "x" });
+            } catch (err) {
+                error = err;
+            }
+            server.closeAllConnections();
+            server.close();
+            expect(error).to.have.property("name", "AbortError");
+            expect(Date.now() - started).to.be.below(2000);
         });
     });
 });
