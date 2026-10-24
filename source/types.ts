@@ -59,15 +59,18 @@ export interface MicrosoftTokenResponse {
 
 export interface GenerateAuthUrlOptions {
     scope?: Array<string> | string;
+    /**
+     * Required: a random value to compare with the one on the redirect
+     */
     state?: string;
     prompt?: "login" | "none" | "consent" | "select_account";
     /**
-     * PKCE code challenge (base64url SHA-256 of the verifier). Recommended
-     * for public clients (desktop/mobile/browser) - generate the pair in the
+     * PKCE code challenge (base64url SHA-256 of the verifier). Required
+     * unless the client has a `clientSecret` - generate the pair in the
      * application with its platform's crypto.
      */
     codeChallenge?: string;
-    codeChallengeMethod?: "S256" | "plain";
+    codeChallengeMethod?: "S256";
 }
 
 export interface OneDriveOAuth2ClientOptions {

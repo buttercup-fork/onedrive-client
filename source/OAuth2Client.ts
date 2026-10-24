@@ -73,6 +73,15 @@ export class OAuth2Client extends EventEmitter {
             state
         } = options;
         const scope = Array.isArray(rawScope) ? rawScope.join(" ") : rawScope;
+        if (!state) {
+            throw new Layerr("A state value is required: compare it with the one on the redirect");
+        }
+        if (!codeChallenge && !this._clientSecret) {
+            throw new Layerr("A PKCE code challenge is required for a client without a secret");
+        }
+        if (codeChallengeMethod !== "S256") {
+            throw new Layerr("Only the S256 code challenge method is supported");
+        }
         return `${this.authorizeURL}?${encodeForm({
             client_id: this._clientID,
             response_type: "code",

@@ -30,10 +30,11 @@ import { OAuth2Client } from "@buttercup/onedrive-client";
 
 const oauth = new OAuth2Client(CLIENT_ID, "http://localhost:8123/callback");
 
-// 1. Send the user to the sign-in page. Public clients (desktop, mobile,
-//    browser) should use PKCE: generate a random verifier and pass its
-//    base64url SHA-256 as the challenge.
-const url = oauth.generateAuthUrl({ codeChallenge });
+// 1. Send the user to the sign-in page. A random `state` is required (compare
+//    it with the one on the redirect). Without a client secret a PKCE
+//    challenge is required too: generate a random verifier and pass its
+//    base64url SHA-256 as the challenge (only S256 is supported).
+const url = oauth.generateAuthUrl({ codeChallenge, state });
 
 // 2. Exchange the `code` from the redirect for tokens
 const { tokens } = await oauth.exchangeAuthCodeForToken(code, codeVerifier);

@@ -27,8 +27,10 @@ describe("OAuth2Client", function () {
     });
 
     describe("generateAuthUrl", function () {
+        const REQUIRED = { codeChallenge: "challenge", state: "st" };
+
         it("uses the common tenant by default", function () {
-            const url = this.client.generateAuthUrl();
+            const url = this.client.generateAuthUrl(REQUIRED);
             expect(
                 url.startsWith("https://login.microsoftonline.com/common/oauth2/v2.0/authorize?")
             ).to.be.true;
@@ -36,11 +38,11 @@ describe("OAuth2Client", function () {
 
         it("supports a specific tenant", function () {
             const client = new OAuth2Client("id", "http://x", { tenant: "consumers" });
-            expect(client.generateAuthUrl()).to.contain("/consumers/oauth2/v2.0/authorize");
+            expect(client.generateAuthUrl(REQUIRED)).to.contain("/consumers/oauth2/v2.0/authorize");
         });
 
         it("includes the client ID, redirect and default scopes", function () {
-            const query = parseForm(this.client.generateAuthUrl().split("?")[1]);
+            const query = parseForm(this.client.generateAuthUrl(REQUIRED).split("?")[1]);
             expect(query).to.include({
                 client_id: "client-id",
                 redirect_uri: "http://localhost:1234/callback",
@@ -69,8 +71,27 @@ describe("OAuth2Client", function () {
             });
         });
 
-        it("omits PKCE when no challenge is given", function () {
-            expect(this.client.generateAuthUrl()).to.not.contain("code_challenge");
+        it("requires a state value", function () {
+            expect(() => this.client.generateAuthUrl({ codeChallenge: "challenge" })).to.throw(
+                "state value is required"
+            );
+        });
+
+        it("requires a PKCE challenge for a client without a secret", function () {
+            expect(() => this.client.generateAuthUrl({ state: "st" })).to.throw(
+                "PKCE code challenge is required"
+            );
+        });
+
+        it("omits PKCE for a confidential client that gives no challenge", function () {
+            const client = new OAuth2Client("id", "http://x", { clientSecret: "shh" });
+            expect(client.generateAuthUrl({ state: "st" })).to.not.contain("code_challenge");
+        });
+
+        it("refuses the plain challenge method", function () {
+            expect(() =>
+                this.client.generateAuthUrl({ ...REQUIRED, codeChallengeMethod: "plain" })
+            ).to.throw("Only the S256");
         });
     });
 
