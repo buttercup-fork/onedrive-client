@@ -68,7 +68,7 @@ Failed requests throw a `Layerr` error whose info includes `status` and `authFai
 
 Paths may not contain `.` or `..` segments.
 
-For national clouds, pass the Graph endpoint: `new OneDriveClient(token, { endpoint: "https://microsoftgraph.chinacloudapi.cn/v1.0" })`.
+For national clouds, pass the Graph endpoint: `new OneDriveClient(token, { endpoint: "https://microsoftgraph.chinacloudapi.cn/v1.0" })`. The access token is sent to the endpoint, so it must be `https` on a known Graph host (`graph.microsoft.com`, `graph.microsoft.us`, `dod-graph.microsoft.us`, `microsoftgraph.chinacloudapi.cn`); anything else (a local test server) needs `allowCustomEndpoint: true`.
 
 ### Patching requests
 

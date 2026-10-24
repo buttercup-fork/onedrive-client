@@ -9,3 +9,4 @@ _Unreleased_
  * `OAuth2Client`: Microsoft identity platform (v2.0) sign-in - authorisation URL (with optional PKCE), code exchange and token refresh, mirroring `@buttercup/google-oauth2-client`
  * Security review fixes (B-641 to B-648; behaviour changes before the first release):
    * Paths with `.` or `..` segments are refused (B-641)
+   * The endpoint must be https on a known Graph host unless `allowCustomEndpoint` is set (B-642)

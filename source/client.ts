@@ -1,5 +1,6 @@
 import { HotPatcher } from "hot-patcher";
 import { request } from "./request.js";
+import { checkEndpoint } from "./util/endpoint.js";
 import { getDirectoryContents } from "./requests/directoryContents.js";
 import { deleteFile, getFileContents, putFileContents } from "./requests/fileContents.js";
 import { GRAPH_ENDPOINT } from "./symbols.js";
@@ -11,7 +12,8 @@ export class OneDriveClient {
     private __token: string;
 
     constructor(token: string, options: OneDriveClientOptions = {}) {
-        const { endpoint = GRAPH_ENDPOINT } = options;
+        const { allowCustomEndpoint = false, endpoint = GRAPH_ENDPOINT } = options;
+        checkEndpoint(endpoint, allowCustomEndpoint);
         this.__endpoint = endpoint.replace(/\/+$/, "");
         this.__token = token;
         this.patcher = new HotPatcher();

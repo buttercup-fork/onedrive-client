@@ -12,6 +12,11 @@ export interface OneDriveTarget {
 
 export interface OneDriveClientOptions {
     /**
+     * Allow an endpoint that is not https on a known Microsoft Graph host
+     * (eg. a local test server). The access token is sent to the endpoint.
+     */
+    allowCustomEndpoint?: boolean;
+    /**
      * Microsoft Graph API base URL - only needed for national clouds.
      * Defaults to "https://graph.microsoft.com/v1.0".
      */

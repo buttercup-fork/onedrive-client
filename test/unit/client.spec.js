@@ -201,16 +201,50 @@ describe("OneDriveClient", function () {
         });
     });
 
-    it("supports a custom endpoint", async function () {
+    it("supports a national cloud endpoint", async function () {
         const client = new OneDriveClient(FAKE_TOKEN, {
-            endpoint: "https://graph.example.cn/v1.0/"
+            endpoint: "https://microsoftgraph.chinacloudapi.cn/v1.0/"
         });
         const stub = sinon.stub().returns(okResponse());
         client.patcher.patch("request", stub);
         await client.getFileContents({ fileID: "x" });
         expect(stub.firstCall.args[0].url).to.equal(
-            "https://graph.example.cn/v1.0/me/drive/items/x/content"
+            "https://microsoftgraph.chinacloudapi.cn/v1.0/me/drive/items/x/content"
         );
+    });
+
+    describe("endpoint check", function () {
+        const BAD = [
+            "http://graph.microsoft.com/v1.0",
+            "https://evil.example/v1.0",
+            "https://graph.microsoft.com.evil.example/v1.0",
+            "https://graph.microsoft.com@evil.example/v1.0",
+            "https://evil.example@graph.microsoft.com/v1.0",
+            "https://graph.microsoft.com:8443/v1.0",
+            "https://graph.microsoft.com/v1.0?x=1",
+            "not a url",
+            ""
+        ];
+        for (const endpoint of BAD) {
+            it(`refuses ${JSON.stringify(endpoint)}`, function () {
+                expect(() => new OneDriveClient(FAKE_TOKEN, { endpoint })).to.throw(
+                    "must be https on a Microsoft Graph host"
+                );
+            });
+        }
+
+        it("allows another endpoint when asked to", async function () {
+            const client = new OneDriveClient(FAKE_TOKEN, {
+                allowCustomEndpoint: true,
+                endpoint: "http://localhost:8080/v1.0"
+            });
+            const stub = sinon.stub().returns(okResponse());
+            client.patcher.patch("request", stub);
+            await client.getFileContents({ fileID: "x" });
+            expect(stub.firstCall.args[0].url).to.equal(
+                "http://localhost:8080/v1.0/me/drive/items/x/content"
+            );
+        });
     });
 
     describe("path segments", function () {
