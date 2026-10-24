@@ -1,7 +1,29 @@
+export const ERR_BAD_TOKEN_RESPONSE = "err/token/response";
 export const ERR_REFRESH_FAILED = "err/refresh/failed";
 export const ERR_UNKNOWN = "err/unknown";
 
 export const GRAPH_ENDPOINT = "https://graph.microsoft.com/v1.0";
+
+/**
+ * Hosts a Graph endpoint may use without opting in (global and national
+ * clouds)
+ */
+export const GRAPH_HOSTS = [
+    "graph.microsoft.com",
+    "graph.microsoft.us",
+    "dod-graph.microsoft.us",
+    "microsoftgraph.chinacloudapi.cn"
+];
+
+/**
+ * Stop following `@odata.nextLink` after this many pages
+ */
+export const MAX_DIRECTORY_PAGES = 1000;
+
+/**
+ * Milliseconds to wait for a response before aborting a request
+ */
+export const REQUEST_TIMEOUT = 60000;
 
 export const MICROSOFT_OAUTH2_BASE_URL = "https://login.microsoftonline.com";
 export const MICROSOFT_OAUTH2_DEFAULT_TENANT = "common";

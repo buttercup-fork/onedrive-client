@@ -1,7 +1,7 @@
 import sinon from "sinon";
 import { expect } from "chai";
 import { Layerr } from "layerr";
-import { ERR_REFRESH_FAILED, OAuth2Client } from "../../dist/index.js";
+import { ERR_BAD_TOKEN_RESPONSE, ERR_REFRESH_FAILED, OAuth2Client } from "../../dist/index.js";
 
 function tokenResponse(body, status = 200) {
     return Promise.resolve({
@@ -27,8 +27,10 @@ describe("OAuth2Client", function () {
     });
 
     describe("generateAuthUrl", function () {
+        const REQUIRED = { codeChallenge: "challenge", state: "st" };
+
         it("uses the common tenant by default", function () {
-            const url = this.client.generateAuthUrl();
+            const url = this.client.generateAuthUrl(REQUIRED);
             expect(
                 url.startsWith("https://login.microsoftonline.com/common/oauth2/v2.0/authorize?")
             ).to.be.true;
@@ -36,11 +38,11 @@ describe("OAuth2Client", function () {
 
         it("supports a specific tenant", function () {
             const client = new OAuth2Client("id", "http://x", { tenant: "consumers" });
-            expect(client.generateAuthUrl()).to.contain("/consumers/oauth2/v2.0/authorize");
+            expect(client.generateAuthUrl(REQUIRED)).to.contain("/consumers/oauth2/v2.0/authorize");
         });
 
         it("includes the client ID, redirect and default scopes", function () {
-            const query = parseForm(this.client.generateAuthUrl().split("?")[1]);
+            const query = parseForm(this.client.generateAuthUrl(REQUIRED).split("?")[1]);
             expect(query).to.include({
                 client_id: "client-id",
                 redirect_uri: "http://localhost:1234/callback",
@@ -69,14 +71,33 @@ describe("OAuth2Client", function () {
             });
         });
 
-        it("omits PKCE when no challenge is given", function () {
-            expect(this.client.generateAuthUrl()).to.not.contain("code_challenge");
+        it("requires a state value", function () {
+            expect(() => this.client.generateAuthUrl({ codeChallenge: "challenge" })).to.throw(
+                "state value is required"
+            );
+        });
+
+        it("requires a PKCE challenge for a client without a secret", function () {
+            expect(() => this.client.generateAuthUrl({ state: "st" })).to.throw(
+                "PKCE code challenge is required"
+            );
+        });
+
+        it("omits PKCE for a confidential client that gives no challenge", function () {
+            const client = new OAuth2Client("id", "http://x", { clientSecret: "shh" });
+            expect(client.generateAuthUrl({ state: "st" })).to.not.contain("code_challenge");
+        });
+
+        it("refuses the plain challenge method", function () {
+            expect(() =>
+                this.client.generateAuthUrl({ ...REQUIRED, codeChallengeMethod: "plain" })
+            ).to.throw("Only the S256");
         });
     });
 
     describe("exchangeAuthCodeForToken", function () {
         it("posts the code and verifier to the token endpoint", async function () {
-            await this.client.exchangeAuthCodeForToken("the%20code", "verifier");
+            await this.client.exchangeAuthCodeForToken("the code", "verifier");
             const [url, options] = this.fetchStub.firstCall.args;
             expect(url).to.equal("https://login.microsoftonline.com/common/oauth2/v2.0/token");
             expect(options.method).to.equal("POST");
@@ -87,6 +108,48 @@ describe("OAuth2Client", function () {
                 redirect_uri: "http://localhost:1234/callback",
                 code_verifier: "verifier"
             });
+        });
+
+        it("sends the code as given, without decoding it again", async function () {
+            await this.client.exchangeAuthCodeForToken("a%2Bb%252Fc%", "verifier");
+            expect(this.fetchStub.firstCall.args[1].body).to.contain("code=a%252Bb%25252Fc%25&");
+        });
+
+        it("passes an abort signal for the timeout", async function () {
+            await this.client.exchangeAuthCodeForToken("code", "verifier");
+            expect(this.fetchStub.firstCall.args[1].signal).to.be.instanceOf(AbortSignal);
+        });
+
+        it("aborts when the token request takes too long", async function () {
+            const client = new OAuth2Client("id", "http://x", { timeout: 20 });
+            sinon.stub(client, "_fetch").callsFake(
+                (url, { signal }) =>
+                    new Promise((resolve, reject) => {
+                        signal.addEventListener("abort", () => reject(new Error("aborted")));
+                    })
+            );
+            let error = null;
+            try {
+                await client.exchangeAuthCodeForToken("code", "verifier");
+            } catch (err) {
+                error = err;
+            }
+            expect(error).to.have.property("message", "aborted");
+        });
+
+        it("rejects a 200 response without an access token", async function () {
+            this.fetchStub.returns(tokenResponse({ foo: "bar" }));
+            const emitted = sinon.spy();
+            this.client.on("tokens", emitted);
+            let error = null;
+            try {
+                await this.client.exchangeAuthCodeForToken("code");
+            } catch (err) {
+                error = err;
+            }
+            expect(Layerr.info(error)).to.include({ code: ERR_BAD_TOKEN_RESPONSE });
+            expect(emitted.called).to.be.false;
+            expect(this.client.accessToken).to.be.null;
         });
 
         it("includes the client secret for confidential clients", async function () {

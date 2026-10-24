@@ -1,11 +1,16 @@
 import { Response, fetch } from "@buttercup/fetch";
 import { Layerr } from "layerr";
+import { REQUEST_TIMEOUT } from "./symbols.js";
 import { Headers } from "./types.js";
 
 export interface RequestConfig {
     body?: string | Buffer | ArrayBufferLike;
     headers?: Headers;
     method: "DELETE" | "GET" | "HEAD" | "PATCH" | "POST" | "PUT";
+    /**
+     * Milliseconds to wait for the response, 0 for no limit
+     */
+    timeout?: number;
     url: string;
 }
 
@@ -18,7 +23,9 @@ export function handleBadResponse(response: Response): void {
                     authFailure: response.status === 401,
                     status: response.status,
                     statusText: response.statusText,
-                    url: response.url
+                    // The final URL after redirects can be a pre-authenticated
+                    // download link: keep the origin and path, drop the query
+                    url: stripQuery(response.url)
                 }
             },
             `Request failed: ${response.status} ${response.statusText}`
@@ -27,12 +34,40 @@ export function handleBadResponse(response: Response): void {
 }
 
 export async function request(config: RequestConfig): Promise<Response> {
-    return fetch(config.url, {
-        method: config.method,
-        headers: config.headers,
-        // @ts-ignore
-        body: config.body
-    });
+    const { signal, clear } = timeoutSignal(config.timeout);
+    try {
+        return await fetch(config.url, {
+            method: config.method,
+            headers: config.headers,
+            signal,
+            // @ts-ignore
+            body: config.body
+        });
+    } finally {
+        clear();
+    }
+}
+
+/**
+ * Remove the query string and fragment from a URL
+ */
+export function stripQuery(url: string | undefined): string | undefined {
+    return typeof url === "string" ? url.split(/[?#]/)[0] : url;
+}
+
+/**
+ * Create an abort signal that fires after a timeout. It covers the wait for
+ * the response, not the reading of its body.
+ * @param timeout Milliseconds (default `REQUEST_TIMEOUT`, 0 for no limit)
+ */
+export function timeoutSignal(timeout: number = REQUEST_TIMEOUT): {
+    signal: AbortSignal | undefined;
+    clear: () => void;
+} {
+    if (!timeout || timeout <= 0) return { signal: undefined, clear: () => {} };
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), timeout);
+    return { signal: controller.signal, clear: () => clearTimeout(timer) };
 }
 
 /**

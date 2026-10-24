@@ -12,10 +12,20 @@ export interface OneDriveTarget {
 
 export interface OneDriveClientOptions {
     /**
+     * Allow an endpoint that is not https on a known Microsoft Graph host
+     * (eg. a local test server). The access token is sent to the endpoint.
+     */
+    allowCustomEndpoint?: boolean;
+    /**
      * Microsoft Graph API base URL - only needed for national clouds.
      * Defaults to "https://graph.microsoft.com/v1.0".
      */
     endpoint?: string;
+    /**
+     * Milliseconds to wait for a response before aborting (default 60000,
+     * 0 for no limit)
+     */
+    timeout?: number;
 }
 
 export interface OneDriveItem {
@@ -49,15 +59,18 @@ export interface MicrosoftTokenResponse {
 
 export interface GenerateAuthUrlOptions {
     scope?: Array<string> | string;
+    /**
+     * Required: a random value to compare with the one on the redirect
+     */
     state?: string;
     prompt?: "login" | "none" | "consent" | "select_account";
     /**
-     * PKCE code challenge (base64url SHA-256 of the verifier). Recommended
-     * for public clients (desktop/mobile/browser) - generate the pair in the
+     * PKCE code challenge (base64url SHA-256 of the verifier). Required
+     * unless the client has a `clientSecret` - generate the pair in the
      * application with its platform's crypto.
      */
     codeChallenge?: string;
-    codeChallengeMethod?: "S256" | "plain";
+    codeChallengeMethod?: "S256";
 }
 
 export interface OneDriveOAuth2ClientOptions {
@@ -66,6 +79,11 @@ export interface OneDriveOAuth2ClientOptions {
      * use PKCE instead
      */
     clientSecret?: string;
+    /**
+     * Milliseconds to wait for a token response before aborting (default
+     * 60000, 0 for no limit)
+     */
+    timeout?: number;
     /**
      * Tenant: "common" (default - personal and work/school accounts),
      * "consumers", "organizations" or a tenant ID

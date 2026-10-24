@@ -1,3 +1,4 @@
+import { createServer } from "node:http";
 import sinon from "sinon";
 import { expect } from "chai";
 import { Layerr } from "layerr";
@@ -201,15 +202,175 @@ describe("OneDriveClient", function () {
         });
     });
 
-    it("supports a custom endpoint", async function () {
+    it("supports a national cloud endpoint", async function () {
         const client = new OneDriveClient(FAKE_TOKEN, {
-            endpoint: "https://graph.example.cn/v1.0/"
+            endpoint: "https://microsoftgraph.chinacloudapi.cn/v1.0/"
         });
         const stub = sinon.stub().returns(okResponse());
         client.patcher.patch("request", stub);
         await client.getFileContents({ fileID: "x" });
         expect(stub.firstCall.args[0].url).to.equal(
-            "https://graph.example.cn/v1.0/me/drive/items/x/content"
+            "https://microsoftgraph.chinacloudapi.cn/v1.0/me/drive/items/x/content"
         );
+    });
+
+    describe("endpoint check", function () {
+        const BAD = [
+            "http://graph.microsoft.com/v1.0",
+            "https://evil.example/v1.0",
+            "https://graph.microsoft.com.evil.example/v1.0",
+            "https://graph.microsoft.com@evil.example/v1.0",
+            "https://evil.example@graph.microsoft.com/v1.0",
+            "https://graph.microsoft.com:8443/v1.0",
+            "https://graph.microsoft.com/v1.0?x=1",
+            "not a url",
+            ""
+        ];
+        for (const endpoint of BAD) {
+            it(`refuses ${JSON.stringify(endpoint)}`, function () {
+                expect(() => new OneDriveClient(FAKE_TOKEN, { endpoint })).to.throw(
+                    "must be https on a Microsoft Graph host"
+                );
+            });
+        }
+
+        it("allows another endpoint when asked to", async function () {
+            const client = new OneDriveClient(FAKE_TOKEN, {
+                allowCustomEndpoint: true,
+                endpoint: "http://localhost:8080/v1.0"
+            });
+            const stub = sinon.stub().returns(okResponse());
+            client.patcher.patch("request", stub);
+            await client.getFileContents({ fileID: "x" });
+            expect(stub.firstCall.args[0].url).to.equal(
+                "http://localhost:8080/v1.0/me/drive/items/x/content"
+            );
+        });
+    });
+
+    describe("path segments", function () {
+        for (const path of ["/../../items/OTHER", "/a/../b", "/./a", ".."]) {
+            it(`refuses ${JSON.stringify(path)}`, async function () {
+                let error = null;
+                try {
+                    await this.client.getFileContents({ path });
+                } catch (err) {
+                    error = err;
+                }
+                expect(error).to.be.an("error");
+                expect(error.message).to.contain(". or ..");
+                expect(this.requestStub.called).to.be.false;
+            });
+        }
+
+        it("still allows dots inside a name", async function () {
+            this.requestStub.returns(okResponse({ text: "x" }));
+            await this.client.getFileContents({ path: "/a../.hidden/b.c..d" });
+            expect(this.requestStub.firstCall.args[0].url).to.equal(
+                `${GRAPH_ENDPOINT}/me/drive/root:/a../.hidden/b.c..d:/content`
+            );
+        });
+    });
+
+    describe("page links", function () {
+        it("refuses a link outside the endpoint, before sending the token", async function () {
+            this.requestStub.returns(
+                okResponse({
+                    json: { value: [], "@odata.nextLink": "http://evil.example/steal" }
+                })
+            );
+            let error = null;
+            try {
+                await this.client.getDirectoryContents();
+            } catch (err) {
+                error = err;
+            }
+            expect(error).to.be.an("error");
+            expect(error.message).to.contain("outside the OneDrive endpoint");
+            expect(this.requestStub.callCount).to.equal(1);
+        });
+
+        it("refuses a link on a look-alike host", async function () {
+            this.requestStub.returns(
+                okResponse({
+                    json: {
+                        value: [],
+                        "@odata.nextLink": "https://graph.microsoft.com.evil.example/v1.0/x"
+                    }
+                })
+            );
+            let error = null;
+            try {
+                await this.client.getDirectoryContents();
+            } catch (err) {
+                error = err;
+            }
+            expect(error).to.be.an("error");
+            expect(this.requestStub.callCount).to.equal(1);
+        });
+
+        it("stops after too many pages", async function () {
+            this.requestStub.callsFake(() =>
+                okResponse({
+                    json: {
+                        value: [],
+                        "@odata.nextLink": `${GRAPH_ENDPOINT}/me/drive/root/children?page=next`
+                    }
+                })
+            );
+            let error = null;
+            try {
+                await this.client.getDirectoryContents();
+            } catch (err) {
+                error = err;
+            }
+            expect(error).to.be.an("error");
+            expect(error.message).to.contain("Too many directory pages");
+            expect(this.requestStub.callCount).to.equal(1000);
+        });
+    });
+
+    describe("failed requests", function () {
+        it("keeps the query string of the final URL out of the error info", async function () {
+            this.requestStub.returns(
+                Promise.resolve({
+                    ok: false,
+                    status: 403,
+                    statusText: "Forbidden",
+                    url: "https://x.sharepoint.com/dl/file?tempauth=SECRET#frag"
+                })
+            );
+            let error = null;
+            try {
+                await this.client.getFileContents({ fileID: "x" });
+            } catch (err) {
+                error = err;
+            }
+            expect(Layerr.info(error).url).to.equal("https://x.sharepoint.com/dl/file");
+        });
+    });
+
+    describe("timeout", function () {
+        it("aborts the default request when the response takes too long", async function () {
+            // A real server that never answers
+            const server = createServer(() => {});
+            await new Promise(resolve => server.listen(0, "127.0.0.1", resolve));
+            const client = new OneDriveClient(FAKE_TOKEN, {
+                allowCustomEndpoint: true,
+                endpoint: `http://127.0.0.1:${server.address().port}/v1.0`,
+                timeout: 50
+            });
+            let error = null;
+            const started = Date.now();
+            try {
+                await client.getFileContents({ fileID: "x" });
+            } catch (err) {
+                error = err;
+            }
+            server.closeAllConnections();
+            server.close();
+            expect(error).to.have.property("name", "AbortError");
+            expect(Date.now() - started).to.be.below(2000);
+        });
     });
 });

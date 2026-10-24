@@ -30,12 +30,14 @@ import { OAuth2Client } from "@buttercup/onedrive-client";
 
 const oauth = new OAuth2Client(CLIENT_ID, "http://localhost:8123/callback");
 
-// 1. Send the user to the sign-in page. Public clients (desktop, mobile,
-//    browser) should use PKCE: generate a random verifier and pass its
-//    base64url SHA-256 as the challenge.
-const url = oauth.generateAuthUrl({ codeChallenge });
+// 1. Send the user to the sign-in page. A random `state` is required (compare
+//    it with the one on the redirect). Without a client secret a PKCE
+//    challenge is required too: generate a random verifier and pass its
+//    base64url SHA-256 as the challenge (only S256 is supported).
+const url = oauth.generateAuthUrl({ codeChallenge, state });
 
-// 2. Exchange the `code` from the redirect for tokens
+// 2. Exchange the `code` from the redirect for tokens. Pass the code as
+//    `URLSearchParams.get("code")` returns it - it is not decoded again.
 const { tokens } = await oauth.exchangeAuthCodeForToken(code, codeVerifier);
 // tokens.access_token, tokens.refresh_token, tokens.expiry_date
 
@@ -45,7 +47,9 @@ const { tokens: fresh } = await oauth.refreshAccessToken(tokens.refresh_token);
 
 `OAuth2Client` emits `"tokens"` whenever it receives new tokens. Options: `tenant` (`"common"` by default, which allows personal and work/school accounts; also `"consumers"`, `"organizations"` or a tenant ID), and `clientSecret` for confidential server-side apps only.
 
-A refresh that fails with a 4xx response (revoked or expired refresh token) throws an error with `code: ERR_REFRESH_FAILED` in its [Layerr](https://github.com/perry-mitchell/layerr) info. The user needs to sign in again.
+A refresh that fails with a 4xx response (revoked or expired refresh token) throws an error with `code: ERR_REFRESH_FAILED` in its [Layerr](https://github.com/perry-mitchell/layerr) info. The user needs to sign in again. A token response without an access token throws with `code: ERR_BAD_TOKEN_RESPONSE` and is not emitted.
+
+Token requests give up after 60 seconds (`timeout` option in milliseconds, `0` for no limit). The timeout covers the wait for the response, not the reading of its body.
 
 ### Files
 
@@ -64,9 +68,11 @@ const items = await client.getDirectoryContents({ path: "/Vaults" }); // root if
 // [{ id, name, path, size, type: "file" | "directory", mtime }]
 ```
 
-Failed requests throw a `Layerr` error whose info includes `status` and `authFailure` (`true` for a 401, meaning the access token needs refreshing).
+Failed requests throw a `Layerr` error whose info includes `status`, `authFailure` (`true` for a 401, meaning the access token needs refreshing) and `url` (origin and path of the final response URL, without the query string).
 
-For national clouds, pass the Graph endpoint: `new OneDriveClient(token, { endpoint: "https://microsoftgraph.chinacloudapi.cn/v1.0" })`.
+Paths may not contain `.` or `..` segments. Requests give up after 60 seconds (`timeout` option in milliseconds, `0` for no limit; it covers the wait for the response, not the body). A directory listing follows at most 1000 pages and only links that stay on the endpoint.
+
+For national clouds, pass the Graph endpoint: `new OneDriveClient(token, { endpoint: "https://microsoftgraph.chinacloudapi.cn/v1.0" })`. The access token is sent to the endpoint, so it must be `https` on a known Graph host (`graph.microsoft.com`, `graph.microsoft.us`, `dod-graph.microsoft.us`, `microsoftgraph.chinacloudapi.cn`); anything else (a local test server) needs `allowCustomEndpoint: true`.
 
 ### Patching requests
 
