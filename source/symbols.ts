@@ -1,3 +1,4 @@
+export const ERR_BAD_TOKEN_RESPONSE = "err/token/response";
 export const ERR_REFRESH_FAILED = "err/refresh/failed";
 export const ERR_UNKNOWN = "err/unknown";
 

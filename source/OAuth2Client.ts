@@ -3,6 +3,7 @@ import { Layerr } from "layerr";
 import { fetch } from "@buttercup/fetch";
 import { encodeForm, handleBadResponse, timeoutSignal } from "./request.js";
 import {
+    ERR_BAD_TOKEN_RESPONSE,
     ERR_REFRESH_FAILED,
     MICROSOFT_OAUTH2_BASE_URL,
     MICROSOFT_OAUTH2_DEFAULT_TENANT,
@@ -183,6 +184,16 @@ export class OAuth2Client extends EventEmitter {
         previousRefreshToken?: string
     ): Promise<MicrosoftTokenResponse> {
         const tokens = (await res.json()) as MicrosoftToken;
+        if (
+            !tokens ||
+            typeof tokens.access_token !== "string" ||
+            tokens.access_token.length === 0
+        ) {
+            throw new Layerr(
+                { info: { code: ERR_BAD_TOKEN_RESPONSE, status: res.status } },
+                "Token response has no access token"
+            );
+        }
         if (tokens.expires_in) {
             tokens.expiry_date = Date.now() + tokens.expires_in * 1000;
             delete tokens.expires_in;

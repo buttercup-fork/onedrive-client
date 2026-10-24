@@ -47,7 +47,7 @@ const { tokens: fresh } = await oauth.refreshAccessToken(tokens.refresh_token);
 
 `OAuth2Client` emits `"tokens"` whenever it receives new tokens. Options: `tenant` (`"common"` by default, which allows personal and work/school accounts; also `"consumers"`, `"organizations"` or a tenant ID), and `clientSecret` for confidential server-side apps only.
 
-A refresh that fails with a 4xx response (revoked or expired refresh token) throws an error with `code: ERR_REFRESH_FAILED` in its [Layerr](https://github.com/perry-mitchell/layerr) info. The user needs to sign in again.
+A refresh that fails with a 4xx response (revoked or expired refresh token) throws an error with `code: ERR_REFRESH_FAILED` in its [Layerr](https://github.com/perry-mitchell/layerr) info. The user needs to sign in again. A token response without an access token throws with `code: ERR_BAD_TOKEN_RESPONSE` and is not emitted.
 
 Token requests give up after 60 seconds (`timeout` option in milliseconds, `0` for no limit). The timeout covers the wait for the response, not the reading of its body.
 

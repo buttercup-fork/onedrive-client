@@ -1,7 +1,7 @@
 import sinon from "sinon";
 import { expect } from "chai";
 import { Layerr } from "layerr";
-import { ERR_REFRESH_FAILED, OAuth2Client } from "../../dist/index.js";
+import { ERR_BAD_TOKEN_RESPONSE, ERR_REFRESH_FAILED, OAuth2Client } from "../../dist/index.js";
 
 function tokenResponse(body, status = 200) {
     return Promise.resolve({
@@ -135,6 +135,21 @@ describe("OAuth2Client", function () {
                 error = err;
             }
             expect(error).to.have.property("message", "aborted");
+        });
+
+        it("rejects a 200 response without an access token", async function () {
+            this.fetchStub.returns(tokenResponse({ foo: "bar" }));
+            const emitted = sinon.spy();
+            this.client.on("tokens", emitted);
+            let error = null;
+            try {
+                await this.client.exchangeAuthCodeForToken("code");
+            } catch (err) {
+                error = err;
+            }
+            expect(Layerr.info(error)).to.include({ code: ERR_BAD_TOKEN_RESPONSE });
+            expect(emitted.called).to.be.false;
+            expect(this.client.accessToken).to.be.null;
         });
 
         it("includes the client secret for confidential clients", async function () {
