@@ -1,6 +1,8 @@
 import { HotPatcher } from "hot-patcher";
+import { Layerr } from "layerr";
 import { Response } from "@buttercup/fetch";
 import { handleBadResponse, RequestConfig } from "../request.js";
+import { MAX_DIRECTORY_PAGES } from "../symbols.js";
 import { itemURL } from "../util/target.js";
 import { OneDriveItem, OneDriveTarget } from "../types.js";
 
@@ -33,8 +35,12 @@ export async function getDirectoryContents(
     const { endpoint, patcher, target, token } = options;
     const items: Array<OneDriveItem> = [];
     let url = itemURL(endpoint, target, "children");
+    let pages = 0;
     // Results are paged - follow @odata.nextLink until exhausted
     while (url) {
+        if (++pages > MAX_DIRECTORY_PAGES) {
+            throw new Layerr(`Too many directory pages (over ${MAX_DIRECTORY_PAGES})`);
+        }
         const config: RequestConfig = {
             url,
             method: "GET",
@@ -47,6 +53,10 @@ export async function getDirectoryContents(
         const data = (await response.json()) as GraphChildrenResponse;
         items.push(...data.value.map(toOneDriveItem));
         url = data["@odata.nextLink"] || null;
+        // The token goes with every page: it must stay on the endpoint
+        if (url && !url.startsWith(`${endpoint}/`)) {
+            throw new Layerr("Refusing to follow a page link outside the OneDrive endpoint");
+        }
     }
     return items;
 }

@@ -10,3 +10,4 @@ _Unreleased_
  * Security review fixes (B-641 to B-648; behaviour changes before the first release):
    * Paths with `.` or `..` segments are refused (B-641)
    * The endpoint must be https on a known Graph host unless `allowCustomEndpoint` is set (B-642)
+   * Directory listings refuse page links outside the endpoint and stop after 1000 pages (B-643)

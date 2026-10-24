@@ -270,4 +270,62 @@ describe("OneDriveClient", function () {
             );
         });
     });
+
+    describe("page links", function () {
+        it("refuses a link outside the endpoint, before sending the token", async function () {
+            this.requestStub.returns(
+                okResponse({
+                    json: { value: [], "@odata.nextLink": "http://evil.example/steal" }
+                })
+            );
+            let error = null;
+            try {
+                await this.client.getDirectoryContents();
+            } catch (err) {
+                error = err;
+            }
+            expect(error).to.be.an("error");
+            expect(error.message).to.contain("outside the OneDrive endpoint");
+            expect(this.requestStub.callCount).to.equal(1);
+        });
+
+        it("refuses a link on a look-alike host", async function () {
+            this.requestStub.returns(
+                okResponse({
+                    json: {
+                        value: [],
+                        "@odata.nextLink": "https://graph.microsoft.com.evil.example/v1.0/x"
+                    }
+                })
+            );
+            let error = null;
+            try {
+                await this.client.getDirectoryContents();
+            } catch (err) {
+                error = err;
+            }
+            expect(error).to.be.an("error");
+            expect(this.requestStub.callCount).to.equal(1);
+        });
+
+        it("stops after too many pages", async function () {
+            this.requestStub.callsFake(() =>
+                okResponse({
+                    json: {
+                        value: [],
+                        "@odata.nextLink": `${GRAPH_ENDPOINT}/me/drive/root/children?page=next`
+                    }
+                })
+            );
+            let error = null;
+            try {
+                await this.client.getDirectoryContents();
+            } catch (err) {
+                error = err;
+            }
+            expect(error).to.be.an("error");
+            expect(error.message).to.contain("Too many directory pages");
+            expect(this.requestStub.callCount).to.equal(1000);
+        });
+    });
 });

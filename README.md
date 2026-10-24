@@ -66,7 +66,7 @@ const items = await client.getDirectoryContents({ path: "/Vaults" }); // root if
 
 Failed requests throw a `Layerr` error whose info includes `status` and `authFailure` (`true` for a 401, meaning the access token needs refreshing).
 
-Paths may not contain `.` or `..` segments.
+Paths may not contain `.` or `..` segments. A directory listing follows at most 1000 pages and only links that stay on the endpoint.
 
 For national clouds, pass the Graph endpoint: `new OneDriveClient(token, { endpoint: "https://microsoftgraph.chinacloudapi.cn/v1.0" })`. The access token is sent to the endpoint, so it must be `https` on a known Graph host (`graph.microsoft.com`, `graph.microsoft.us`, `dod-graph.microsoft.us`, `microsoftgraph.chinacloudapi.cn`); anything else (a local test server) needs `allowCustomEndpoint: true`.
 

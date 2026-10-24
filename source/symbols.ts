@@ -14,6 +14,11 @@ export const GRAPH_HOSTS = [
     "microsoftgraph.chinacloudapi.cn"
 ];
 
+/**
+ * Stop following `@odata.nextLink` after this many pages
+ */
+export const MAX_DIRECTORY_PAGES = 1000;
+
 export const MICROSOFT_OAUTH2_BASE_URL = "https://login.microsoftonline.com";
 export const MICROSOFT_OAUTH2_DEFAULT_TENANT = "common";
 
