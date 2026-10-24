@@ -97,7 +97,7 @@ describe("OAuth2Client", function () {
 
     describe("exchangeAuthCodeForToken", function () {
         it("posts the code and verifier to the token endpoint", async function () {
-            await this.client.exchangeAuthCodeForToken("the%20code", "verifier");
+            await this.client.exchangeAuthCodeForToken("the code", "verifier");
             const [url, options] = this.fetchStub.firstCall.args;
             expect(url).to.equal("https://login.microsoftonline.com/common/oauth2/v2.0/token");
             expect(options.method).to.equal("POST");
@@ -108,6 +108,11 @@ describe("OAuth2Client", function () {
                 redirect_uri: "http://localhost:1234/callback",
                 code_verifier: "verifier"
             });
+        });
+
+        it("sends the code as given, without decoding it again", async function () {
+            await this.client.exchangeAuthCodeForToken("a%2Bb%252Fc%", "verifier");
+            expect(this.fetchStub.firstCall.args[1].body).to.contain("code=a%252Bb%25252Fc%25&");
         });
 
         it("passes an abort signal for the timeout", async function () {

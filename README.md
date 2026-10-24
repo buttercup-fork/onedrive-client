@@ -36,7 +36,8 @@ const oauth = new OAuth2Client(CLIENT_ID, "http://localhost:8123/callback");
 //    base64url SHA-256 as the challenge (only S256 is supported).
 const url = oauth.generateAuthUrl({ codeChallenge, state });
 
-// 2. Exchange the `code` from the redirect for tokens
+// 2. Exchange the `code` from the redirect for tokens. Pass the code as
+//    `URLSearchParams.get("code")` returns it - it is not decoded again.
 const { tokens } = await oauth.exchangeAuthCodeForToken(code, codeVerifier);
 // tokens.access_token, tokens.refresh_token, tokens.expiry_date
 

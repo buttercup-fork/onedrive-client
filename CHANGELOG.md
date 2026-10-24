@@ -13,3 +13,4 @@ _Unreleased_
    * Directory listings refuse page links outside the endpoint and stop after 1000 pages (B-643)
    * Requests and token requests time out after 60 seconds, `timeout` option (B-644)
    * `generateAuthUrl` requires `state`, and a PKCE challenge unless the client has a secret; only `S256` (B-645)
+   * The authorisation code is no longer decoded a second time (B-646)

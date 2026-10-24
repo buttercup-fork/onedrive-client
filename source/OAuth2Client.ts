@@ -97,7 +97,8 @@ export class OAuth2Client extends EventEmitter {
 
     /**
      * Exchange the authorisation code from the redirect for tokens
-     * @param authCode The code from the redirect URL
+     * @param authCode The code from the redirect URL, already URL-decoded
+     *  (as `URLSearchParams.get` returns it)
      * @param codeVerifier The PKCE verifier, if a challenge was used
      */
     async exchangeAuthCodeForToken(
@@ -106,7 +107,7 @@ export class OAuth2Client extends EventEmitter {
     ): Promise<MicrosoftTokenResponse> {
         const res = await this._requestToken({
             grant_type: "authorization_code",
-            code: decodeURIComponent(authCode),
+            code: authCode,
             redirect_uri: this._redirectURL,
             code_verifier: codeVerifier
         });
