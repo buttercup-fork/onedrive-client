@@ -30,6 +30,13 @@ function encodePath(path: string): string {
         .normalize("NFC")
         .split("/")
         .filter(segment => segment.length > 0)
-        .map(segment => encodeURIComponent(segment))
+        .map(segment => {
+            // encodeURIComponent leaves dots alone and URL parsing would
+            // resolve them, moving the request off the drive path
+            if (segment === "." || segment === "..") {
+                throw new Layerr("OneDrive path may not contain . or .. segments");
+            }
+            return encodeURIComponent(segment);
+        })
         .join("/");
 }

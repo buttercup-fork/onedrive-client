@@ -212,4 +212,28 @@ describe("OneDriveClient", function () {
             "https://graph.example.cn/v1.0/me/drive/items/x/content"
         );
     });
+
+    describe("path segments", function () {
+        for (const path of ["/../../items/OTHER", "/a/../b", "/./a", ".."]) {
+            it(`refuses ${JSON.stringify(path)}`, async function () {
+                let error = null;
+                try {
+                    await this.client.getFileContents({ path });
+                } catch (err) {
+                    error = err;
+                }
+                expect(error).to.be.an("error");
+                expect(error.message).to.contain(". or ..");
+                expect(this.requestStub.called).to.be.false;
+            });
+        }
+
+        it("still allows dots inside a name", async function () {
+            this.requestStub.returns(okResponse({ text: "x" }));
+            await this.client.getFileContents({ path: "/a../.hidden/b.c..d" });
+            expect(this.requestStub.firstCall.args[0].url).to.equal(
+                `${GRAPH_ENDPOINT}/me/drive/root:/a../.hidden/b.c..d:/content`
+            );
+        });
+    });
 });

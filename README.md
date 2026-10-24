@@ -66,6 +66,8 @@ const items = await client.getDirectoryContents({ path: "/Vaults" }); // root if
 
 Failed requests throw a `Layerr` error whose info includes `status` and `authFailure` (`true` for a 401, meaning the access token needs refreshing).
 
+Paths may not contain `.` or `..` segments.
+
 For national clouds, pass the Graph endpoint: `new OneDriveClient(token, { endpoint: "https://microsoftgraph.chinacloudapi.cn/v1.0" })`.
 
 ### Patching requests
