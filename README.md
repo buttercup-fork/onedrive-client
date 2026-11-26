@@ -5,19 +5,19 @@
 
 A small client for the parts of the [Microsoft Graph](https://learn.microsoft.com/graph/api/resources/onedrive) OneDrive API that Buttercup needs: **reading**, **writing**, **deleting** and **listing** files. It also includes a minimal **OAuth2 client** for the Microsoft identity platform, for obtaining and refreshing access tokens.
 
-Like Buttercup's [Dropbox](https://github.com/buttercup/dropbox-client) and [Google Drive](https://github.com/buttercup/googledrive-client) clients, it makes plain HTTP requests rather than using Microsoft's SDKs. This keeps it small, easy to follow and working the same in NodeJS, the browser and React Native. Requests use [`@buttercup/fetch`](https://github.com/buttercup/fetch).
+Like Buttercup's [Dropbox](https://github.com/buttercup-fork/dropbox-client) and [Google Drive](https://github.com/buttercup-fork/googledrive-client) clients, it makes plain HTTP requests rather than using Microsoft's SDKs. This keeps it small, easy to follow and working the same in NodeJS, the browser and React Native. Requests use the platform's built-in `fetch` through [`@buttercup-fork/fetch`](https://github.com/buttercup-fork/fetch).
 
 Only text files are supported for reading and writing.
 
 ## Installation
 
-This fork's packages aren't published to npm. Install from git:
+Published on npm as `@buttercup-fork/onedrive-client`:
 
 ```shell
-npm install github:buttercup-fork/onedrive-client --save
+npm install @buttercup-fork/onedrive-client --save
 ```
 
-The package builds itself on install (`prepare`). It requires an [ESM](https://nodejs.org/api/esm.html) environment and NodeJS 22 or newer.
+It requires an [ESM](https://nodejs.org/api/esm.html) environment and NodeJS 22 or newer.
 
 ## Usage
 
@@ -26,7 +26,7 @@ The package builds itself on install (`prepare`). It requires an [ESM](https://n
 Register an application in the [Azure portal](https://portal.azure.com/#view/Microsoft_AAD_RegisteredApps/ApplicationsListBlade) ("App registrations"), add a redirect URI, and grant the delegated Microsoft Graph permission `Files.ReadWrite` (or `Files.ReadWrite.AppFolder` to limit access to an app folder).
 
 ```typescript
-import { OAuth2Client } from "@buttercup/onedrive-client";
+import { OAuth2Client } from "@buttercup-fork/onedrive-client";
 
 const oauth = new OAuth2Client(CLIENT_ID, "http://localhost:8123/callback");
 
@@ -54,7 +54,7 @@ Token requests give up after 60 seconds (`timeout` option in milliseconds, `0` f
 ### Files
 
 ```typescript
-import { OneDriveClient } from "@buttercup/onedrive-client";
+import { OneDriveClient } from "@buttercup-fork/onedrive-client";
 
 const client = new OneDriveClient(accessToken);
 

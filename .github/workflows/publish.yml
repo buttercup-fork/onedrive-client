@@ -1,0 +1,59 @@
+name: Publish
+
+# Stages a version on npm through trusted publishing (OIDC, no token). The
+# version stays private until a maintainer approves it with 2FA on npmjs.com
+# or with `npm stage approve`; this workflow cannot approve its own stage.
+# Started by hand on GitHub only. The npm trusted publisher is bound to this
+# file name and to the `release` environment: renaming either breaks it.
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Version to stage (must equal package.json)"
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  stage:
+    # Forgejo runs the same workflow files: never publish from there
+    if: github.server_url == 'https://github.com' && github.ref == 'refs/heads/master'
+    runs-on: ubuntu-latest
+    environment: release
+    permissions:
+      contents: read
+      id-token: write
+    env:
+      # No git hooks in CI (husky runs from the prepare script)
+      HUSKY: "0"
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
+        with:
+          persist-credentials: false
+      # No cache: this job builds what goes to the registry
+      - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5.0.0
+        with:
+          node-version: 22.x
+          registry-url: https://registry.npmjs.org
+      # npm stage needs npm 11.15.0+ and Node 22.14+
+      - run: npm install -g npm@11.21.3
+      - name: Check the requested version
+        env:
+          REQUESTED: ${{ inputs.version }}
+        run: |
+          node --version
+          npm --version
+          actual="$(node -p "require('./package.json').version")"
+          if [ "$actual" != "$REQUESTED" ]; then
+            echo "package.json says $actual, asked for $REQUESTED" >&2
+            exit 1
+          fi
+      # From the lockfile, without the dependencies' install scripts
+      - run: npm ci --ignore-scripts
+      # Builds dist/ and runs the specs
+      - run: npm test
+      - run: npm pack --dry-run
+      # Runs the package's own prepare (build) again before packing
+      - run: npm stage publish --provenance --access public

@@ -1,9 +1,10 @@
 # OneDrive Client changelog
 
 ## v0.1.0
-_Unreleased_
+_2026-11-26_ (CodeKunde)
 
- * Initial release
+ * Initial release, published on npm as `@buttercup-fork/onedrive-client`, staged from GitHub Actions through trusted publishing with provenance (`publish.yml`, started by hand)
+ * Requests use the built-in `fetch` through `@buttercup-fork/fetch` 0.4 (installed under its old name `@buttercup/fetch`, so the imports are unchanged); upstream's `@buttercup/fetch` 0.2.1 and its `node-fetch` are no longer dependencies
  * Requires NodeJS 22 or newer; CI runs on branch pushes only (Node 22 and 24)
  * `OneDriveClient`: read, write, delete and list OneDrive items over the Microsoft Graph API, by drive item ID or by path. Requests go through a `hot-patcher` `"request"` hook, as in `@buttercup/googledrive-client`
  * `OAuth2Client`: Microsoft identity platform (v2.0) sign-in - authorisation URL (with optional PKCE), code exchange and token refresh, mirroring `@buttercup/google-oauth2-client`

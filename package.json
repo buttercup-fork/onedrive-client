@@ -1,5 +1,5 @@
 {
-  "name": "@buttercup/onedrive-client",
+  "name": "@buttercup-fork/onedrive-client",
   "version": "0.1.0",
   "description": "Basic client and OAuth2 helper for Microsoft OneDrive (Microsoft Graph)",
   "exports": "./dist/index.js",
@@ -40,7 +40,7 @@
   "author": "Codekunde",
   "license": "MIT",
   "dependencies": {
-    "@buttercup/fetch": "^0.2.1",
+    "@buttercup/fetch": "npm:@buttercup-fork/fetch@^0.4.0",
     "eventemitter3": "^5.0.1",
     "hot-patcher": "^2.0.1",
     "layerr": "^2.0.1"
@@ -53,5 +53,8 @@
     "rimraf": "^5.0.5",
     "sinon": "^17.0.1",
     "typescript": "^5.2.2"
+  },
+  "publishConfig": {
+    "access": "public"
   }
 }
